@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as pl
 
+
 def get_data(NAME : str, drop_labels_x : list, drop_labels_y : list):
     """Reads .csv data and returns data(up to 2D) and data_y(1D) 
 
@@ -34,7 +35,8 @@ def seq_gen_x(data_x, seq_len = 5):
     Returns:
         np.array: sequence-divided input data
     """
-    num_batch = int(np.floor(data_x.shape[0] / seq_len))
+    num_batch = int(np.floor(data_x.shape[0] / seq_len)-1)
+    print(num_batch)
     x_data = []
     for batch in range(num_batch):
         x_data.append(data_x[batch * seq_len:(batch + 1) * seq_len])
@@ -52,7 +54,7 @@ def seq_gen_y(data_y, seq_len = 5):
     Returns:
         np.array: sequence-divided output data
     """
-    num_batch = int(np.floor(data_y.shape[0] / seq_len))
+    num_batch = int(np.floor(data_y.shape[0] / seq_len)-1)
     y_data = []
     for batch in range(num_batch):
         y_data.append(data_y[batch * seq_len + 1:(batch + 1) * seq_len + 1])
@@ -114,20 +116,53 @@ def show_and_prove(model, h5_path, x_data, y_data, save_path, return_loss = Fals
     # param = {'seq_len' : 25, 'sample_len' : 25, 'num_units' : 64, 'num_filters' : 64, 'window' : 3, 'drop_rate' : 0.2, 'num_epochs' : 800}
     RMSE_total, MAE_total, Error_rate, prediction_graph, y_graph = prove(model, h5_path, x_data, y_data)
     
-    print(prediction_graph.shape)
-    print(save_path)
-    if plot:
-        pl.figure(dpi=150)
-        pl.ylabel('SOH Error (%)')
-        pl.xlabel('Cycles')
-        line = pl.plot(prediction_graph, label = 'SOH Estimation')
-        pl.setp(line, linewidth=0.5)
-        if show_y:
-            y_line = pl.plot(y_graph, label = 'SOH Reference')
-            pl.setp(y_line, linewidth=0.5)
-        pl.legend()
-        pl.savefig(f'{save_path}\Estimation.png')
-        pl.show()
+    # print(prediction_graph.shape)
+    # print(save_path)
+    # if plot:
+    #     pl.figure(dpi=350)
+    #     pl.ylabel('Voltage')
+    #     pl.xlabel('Time(s)')
+    #     line = pl.plot(prediction_graph, label = 'Voltage Estimation')
+    #     pl.setp(line, linewidth=0.5)
+    #     if show_y:
+    #         y_line = pl.plot(y_graph, label = 'Voltage Reference')
+    #         pl.setp(y_line, linewidth=0.5)
+    #     pl.legend()
+    #     pl.savefig(f'{save_path}\Estimation.png')
+    #     pl.show()
     
     if return_loss:
         return RMSE_total, MAE_total, Error_rate
+
+def lowpass(input, Fsize):
+    output=[]
+
+
+    Dsize=input.shape[0]
+    for i in range (0,Dsize):
+        sum=0
+        for j in range(1-Fsize,1):
+            sum+=input[i + j]/Fsize
+        output.append(sum)
+    output=np.array(output).astype(np.float32)    
+
+
+    return output
+
+
+def relow(refilter, real, Fsize):
+    Rsize=refilter.shape[0]
+    reoutput=[]
+    for i in range (0,Rsize):
+        sum=Fsize*refilter[i]
+        for j in range(1-Fsize,0):
+            sum-= real[i+j]
+        reoutput.append(sum)
+    reoutput=np.array(reoutput).astype(np.float32)
+
+
+    return reoutput
+
+
+
+
